@@ -40,6 +40,7 @@ class KriptoGUI:
         self.aes_key = None
         self.aes_iv = None
         self.min_duration_required = None
+        self.total_embed_bits = None
 
     def load_image(self):
         path = filedialog.askopenfilename(filetypes=[("PNG", "*.png"), ("All files", "*.*")])
@@ -57,16 +58,20 @@ class KriptoGUI:
             img_data = img_bytes.getvalue()
             self.ciphertext, self.aes_key, self.aes_iv = encrypt_aes_cfb.encrypt_image(img_data)
 
-            bit_count = len(self.ciphertext) * 8
+            length_prefix = len(self.ciphertext).to_bytes(4, byteorder='big')
+            data_with_length = length_prefix + self.ciphertext
+            self.total_embed_bits = len(data_with_length) * 8
+
             embed_every_n_sample = int(self.embed_entry.get())
             sample_rate = 44100
-            total_samples = bit_count * embed_every_n_sample
+            total_samples = self.total_embed_bits * embed_every_n_sample
             self.min_duration_required = total_samples / sample_rate
 
             self.status_label.config(
                 text=(
                     f"Gambar: {path.split('/')[-1]}\n"
-                    f"Ukuran gambar: {img.size}, Ukuran ciphertext: {len(self.ciphertext)} byte ({bit_count} bit)\n"
+                    f"Ukuran gambar: {img.size}, Ukuran ciphertext: {len(self.ciphertext)} byte\n"
+                    f"Total bit yang akan disisipkan: {self.total_embed_bits} bit\n"
                     f"Min durasi audio: {self.min_duration_required:.2f} detik "
                     f"(dengan embed tiap {embed_every_n_sample} sample)"
                 )
@@ -111,10 +116,13 @@ class KriptoGUI:
             return
 
         embed_every_n_sample = int(self.embed_entry.get())
-        length_prefix = len(self.ciphertext).to_bytes(4, byteorder='big')
-        data_with_length = length_prefix + self.ciphertext
+        data_with_length = len(self.ciphertext).to_bytes(4, 'big') + self.ciphertext
+
         echo_hiding.embed_echo(self.audio_path, output_audio, data_with_length, delay=embed_every_n_sample)
-        echo_hiding.embed_echo(self.audio_path, "preview_stego.wav", self.ciphertext, delay=embed_every_n_sample)
+        
+        # Salin sebagai preview jika ingin dibandingkan waveform
+        import shutil
+        shutil.copy(output_audio, "preview_stego.wav")
 
         with open("key.bin", "wb") as f:
             f.write(self.aes_key)
@@ -168,9 +176,10 @@ class KriptoGUI:
             messagebox.showerror("Gagal", "key.bin atau iv.bin tidak ditemukan.")
             return
 
-        extracted = echo_extract.extract_echo(stego_path, bit_count=120000)
-        cipher_len = int.from_bytes(extracted[:4], byteorder='big')
-        ciphertext = extracted[4:4+cipher_len]
+        estimated_bits = 1000000  # pastikan mencakup seluruh payload
+        extracted = echo_extract.extract_echo(stego_path, bit_count=estimated_bits)
+        cipher_len = int.from_bytes(extracted[:4], 'big')
+        ciphertext = extracted[4:4 + cipher_len]
         plaintext = decrypt_aes_cfb.decrypt_image(ciphertext, k, v)
 
         out_path = filedialog.asksaveasfilename(defaultextension=".png")
