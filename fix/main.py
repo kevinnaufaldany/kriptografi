@@ -1,8 +1,5 @@
-from gui.echo_gui import EchoHidingGUI
+from echo_gui import EchoHidingGUI
 
-def main():
+if __name__ == '__main__':
     app = EchoHidingGUI()
     app.mainloop()
-
-if __name__ == "__main__":
-    main()
