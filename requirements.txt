@@ -5,3 +5,10 @@ scipy>=1.6.0
 matplotlib>=3.3.0
 soundfile>=0.10.0
 tkinter>=8.6  # Usually included with Python installation
+tkinterdnd2>=0.3.0
+Pillow>=8.0.0       # jika menampilkan gambar di Tkinter
+cryptography>=3.4.0  # jika rsa_crypto menggunakan pustaka ini
+# atau:
+# pycryptodome>=3.9.9  # alternatif lain untuk RSA, tergantung implementasi Anda
+
+# tkinter biasanya sudah tersedia di Python, jadi tidak perlu di-install via pip
