@@ -1,7 +1,0 @@
-# requirements.txt - Dependencies for Echo Hiding Python Scripts
-
-numpy>=1.20.0
-scipy>=1.6.0
-matplotlib>=3.3.0
-soundfile>=0.10.0
-tkinter>=8.6  # Usually included with Python installation
